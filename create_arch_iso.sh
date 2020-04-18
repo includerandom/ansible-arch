@@ -27,8 +27,8 @@ done
 echo 'echo "root:archiso" | chpasswd' \
   >> $archisodir/airootfs/root/customize_airootfs.sh
 
-# Enable sshd.socket
-echo 'systemctl enable sshd.socket' \
+# Enable sshd.service
+echo 'systemctl enable sshd.service' \
   >> $archisodir/airootfs/root/customize_airootfs.sh
 
 # Copy mirrorlist to /root
