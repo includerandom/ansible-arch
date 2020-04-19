@@ -31,6 +31,32 @@ echo 'echo "root:archiso" | chpasswd' \
 echo 'systemctl enable sshd.service' \
   >> $archisodir/airootfs/root/customize_airootfs.sh
 
+# Optionally. Uncomment if you use wifi. Add wifi point
+#cat << EOF >> $archisodir/airootfs/root/customize_airootfs.sh
+#cat << EOF2 >> '/etc/wpa_supplicant/wpa_supplicant-wlan0.conf'
+#ctrl_interface=/run/wpa_supplicant"
+#update_config=1
+#fast_reauth=1
+#ap_scan=1
+#network={
+#        ssid="WiFiPoint"
+#        psk="PasswordWiFiPointHere"
+#}
+#EOF2
+#EOF
+
+# Optionally. Uncomment if you use wifi. Enable wpa_supplicant service
+#echo 'systemctl enable wpa_supplicant@wlan0' \
+#  >> $archisodir/airootfs/root/customize_airootfs.sh
+
+# Enable dhcpcd service
+echo 'systemctl enable dhcpcd' \
+  >> $archisodir/airootfs/root/customize_airootfs.sh
+
+# Optionally. Uncomment if you use wifi. Enable rfkill-unblock service
+#echo 'systemctl enable rfkill-unblock@all.service' \
+#  >> $archisodir/airootfs/root/customize_airootfs.sh
+
 # Copy mirrorlist to /root
 cp /etc/pacman.d/mirrorlist $archisodir/airootfs/root/
 
