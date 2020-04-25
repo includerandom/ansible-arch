@@ -1,9 +1,11 @@
 Inspired by
 https://github.com/jsf9k/ansible-arch-install
+
 https://github.com/jmcvaughn/ansible-arch
 
 If you would like use LUKS, ceate a keyfile on your local host containing the password for
-   your LUKS root volume via `echo -n "your_password" > lucky_file`.
+    your LUKS root volume via 
+    `echo -n "your_password" > lucky_file`.
 
 # ansible-arch
 ansible-arch is a collection of Ansible playbooks and roles that I use to
