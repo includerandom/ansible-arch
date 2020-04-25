@@ -3,4 +3,10 @@
     name:
       - pulseaudio
       - pulseaudio-alsa
+      - alsa-utils
     state: present
+
+- name: Add the user in group of audio
+  user:
+    name: '{{ user.name }}'
+    group: audio

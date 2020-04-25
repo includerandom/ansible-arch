@@ -1,0 +1,33 @@
+hostname: lucky
+install_drive: /dev/nvme0n1
+wired_interface: wlp7s0
+pacstrap_pkg: "base base-devel linux linux-firmware linux-headers dhcpcd openssh lvm2 vim wpa_supplicant intel-ucode python"
+
+firefox:
+  install: True
+
+fonts:
+  windows: False
+
+
+luks_keyfile: lucky_file
+#macbook:
+  #  swap_opt_cmd: True
+
+wifi_local: 
+  interface: wlp7s0
+
+nvidia:
+  install: True
+  config: True
+
+autologin: False
+
+xorg:
+  XkbLayout: "us,ru"
+  XkbOptions: "grp:alt_shift_toggle"
+  mouse_config: False
+  touchpad_config: True
+
+# vim: set filetype=yaml:
+

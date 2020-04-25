@@ -1,75 +1,61 @@
-autologin: True
+#autologin: True
 
-i18n: en-gb
+#i18n: ru-ru
 
-fonts:
-  windows: True
+#qutebrowser:
+#  install: True
+#  webengine_widevine: True
 
-firefox:
-  install: True
-
-libreoffice:
-  hyphen_lang: en
-
-pacman:
-  repos:
-    # For brother-hll2340dw printer drivers
-    - multilib
-
-qutebrowser:
-  install: True
-  webengine_widevine: True
-
-xorg:
-  XkbLayout: gb
-  XkbModel: pc105
-  mouse_config: True
-
+#xorg:
+#  XkbLayout: ru
+#  XkbModel: pc105
+#  mouse_config: True
+#
 # packages
-packages_pc:
-  repos:
-    - argyllcms
-    - gimp
-    - imv
-    - pandoc
-    - picocom
-    - rofi
-    - telegram-desktop
-    - virt-manager
-    - xdg-utils
-    # For IPMI KVM
-    - icedtea-web
-    # mpv
-    - mpv
-    - youtube-dl
-    # remmina
-    - remmina
-    - libvncserver
-    # For tmux configuration in ansible-dotfiles
-    - xclip
-    # zathura
-    - zathura
-    - zathura-pdf-mupdf
-  aur:
-    - brother-hll2340dw
-    - drawio-desktop-bin
-    - neofetch
-    - slack-desktop
-    # Rofi extensions/plugins
-    - rofi-calc
+#packages_pc:
+#  repos:
+#    - argyllcms
+#    - gimp
+#    - imv
+#    - pandoc
+#    - picocom
+#    - rofi
+#    - telegram-desktop
+#    - virt-manager
+#    - xdg-utils
+#    # For IPMI KVM
+#    - icedtea-web
+#    # mpv
+#    - mpv
+#    - youtube-dl
+#    # remmina
+#    - remmina
+#    - libvncserver
+#    # For tmux configuration in ansible-dotfiles
+#    - xclip
+#    # zathura
+#    - zathura
+#    - zathura-pdf-mupdf
+#  aur:
+#    #    - brother-hll2340dw
+#    #    - drawio-desktop-bin
+#    - neofetch
+#    #    - slack-desktop
+#    # Rofi extensions/plugins
+#    #    - rofi-calc
 
 # Combine lists, packages_all refers to packages for 'all' group
-packages:
-  repos: '{{ packages_pc.repos }} + {{ packages_all.repos }}'
-  aur: '{{ packages_pc.aur }} + {{ packages_all.aur }}'
+#packages:
+#  repos: '{{ packages_pc.repos }} + {{ packages_all.repos }}'
+#  aur: '{{ packages_pc.aur }} + {{ packages_all.aur }}'
 
 # wifi
-wifi_pc: 
-  broadcom: True
+#wifi_pc: 
+#  broadcom: True
 
 # Combine dictionaries, wifi_local refers to a system-specific configuration in
 # host_vars/
-wifi: '{{ wifi_pc | combine(wifi_local) }}'
+#wifi: '{{ wifi_pc | combine(wifi_local) }}'
 
 # vim: set filetype=yaml:
 

@@ -25,3 +25,9 @@
     dest: /etc/X11/xorg.conf.d/
   when: xorg.mouse_config is sameas True
 
+- name: Copy pointer configuration file
+  copy:
+    src: 40-touchpad.conf
+    dest: /etc/X11/xorg.conf.d/
+  when: xorg.touchpad_config is sameas True
+

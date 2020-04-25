@@ -1,0 +1,6 @@
+awesome_config_files:
+  - rc.lua
+  - battery.lua
+  - mem.lua
+  - themes 
+

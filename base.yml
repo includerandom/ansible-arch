@@ -1,7 +1,7 @@
-- hosts: '{{ host }}'
+- hosts: all
   become: True
-  become_user: root
-  become_method: su
+#  become_user: root
+#  become_method: sudo
 #  vars_prompt:
 #    - name: password
 #      prompt: 'User password'
@@ -10,9 +10,7 @@
 #      confirm: True
 #      salt_size: 8
   roles:
-    # Update pacman cache
     - { role: pacman_cache, tags: always }
-
     - { role: hostname, tags: hostname }
     - { role: time, tags: time }
     - { role: locale, tags: locale }
@@ -26,17 +24,8 @@
     - { role: shell_utils, tags: shell_utils }
     - { role: ssh, tags: ssh }
     - { role: base_utils, tags: base_utils }
-    - { role: neovim, tags: neovim }
+      #- { role: neovim, tags: neovim }
     - { role: dictionaries, tags: dictionaries }
     - { role: docker, tags: docker }
-    - { role: texlive, tags: texlive }
-    - { role: android_tools, tags: android_tools }
+      #    - { role: texlive, tags: texlive }
 
-    # Not true dependencies of virt role
-    - { role: nfs-server, tags: nfs-server }
-    - { role: openvswitch, tags: openvswitch }
-    - { role: virt, tags: virt }
-
-    # smartd requires postfix
-    - { role: postfix, tags: postfix }
-    - { role: smartd, tags: smartd }

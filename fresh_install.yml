@@ -1,0 +1,360 @@
+---
+- hosts: all
+  tasks:
+    - name: Abort if the host is not booted from the Arch install media
+      fail:
+        msg: "This host is not booted from the Arch install media!"
+      when: ansible_nodename != 'archiso'
+      tags:
+        - quick_exit
+    - name: Synchronize clock via NTP
+      command: timedatectl set-ntp true
+      tags:
+        - sync_clock
+    - name: Repartition install drive
+      block:
+        - name: Wipe install drive and all its partitions
+          command: find /dev -wholename "{{ install_drive }}*" -exec wipefs --force --all {} \;
+          tags:
+            - wipefs
+        - name: Create boot partition
+          parted:
+            device: '{{ install_drive }}'
+            label: gpt
+            number: 1
+            part_end: 538MB
+            name: boot
+            flags: [boot, esp]
+            state: present
+        - name: Create root partition
+          parted:
+            device: '{{ install_drive }}'
+            label: gpt
+            number: 2
+            part_start: 538MB
+            name: root
+            flags: [lvm]
+            state: present
+        - name: Get UUID for root LUKS volume
+          command: blkid -s UUID -o value '{{ install_drive }}{{ root_partition_suffix }}'
+          register: root_luks_uuid
+          changed_when: false
+      tags:
+        - repartition
+    - name: Setup LUKS encryption for root filesystem
+      block:
+        - name: Copy keyfile
+          copy:
+            src: '{{ luks_keyfile }}'
+            dest: /root/keyfile
+        - name: Destroy existing LUKS volume
+          luks_device:
+            device: '{{ install_drive }}{{ root_partition_suffix }}'
+            state: absent
+        - name: Create and open LUKS volume
+          luks_device:
+            device: '{{ install_drive }}{{ root_partition_suffix }}'
+            keyfile: /root/keyfile
+            name: system
+            state: opened
+      tags:
+        - luks
+    - name: Setup LVM root and tmp volumes
+      block:
+        - name: Remove existing volume group
+          lvg:
+            vg: system
+            force: yes
+            state: absent
+        - name: Configure volume group
+          lvg:
+            vg: system
+            pvs:
+              - /dev/mapper/system
+        - name: Configure logical volumes
+          lvol:
+            vg: system
+            lv: '{{ item.lv }}'
+            size: '{{ item.size }}'
+          loop:
+            - {lv: swap, size: 128m}
+            - {lv: var, size: 16g}
+            - {lv: root, size: "100%FREE"}
+      tags:
+        - lvm
+    - name: Create filesystems
+      block:
+        - name: Create FAT32 filesystem in boot partition
+          filesystem:
+            dev: '{{ install_drive }}{{ boot_partition_suffix }}'
+            fstype: vfat
+            opts: -F32
+            force: yes
+        - name: Create ext4 filesystem in swap volume
+          filesystem:
+            dev: /dev/mapper/system-swap
+            fstype: swap
+            force: yes
+        - name: Create ext4 filesystem in root volume
+          filesystem:
+            dev: /dev/mapper/system-root
+            fstype: ext4
+            force: yes
+        - name: Create ext4 filesystem in var volume
+          filesystem:
+            dev: /dev/mapper/system-var
+            fstype: ext4
+            force: yes
+        - name: Get UUID for boot filesystem
+          command: blkid -s UUID -o value '{{ install_drive }}{{ boot_partition_suffix }}'
+          register: boot_uuid
+          changed_when: false
+        - name: Get UUID for system partition
+          command: blkid -s UUID -o value '{{ install_drive }}{{ root_partition_suffix }}'
+          register: system_uuid
+          changed_when: false
+        - name: Get UUID for root filesystem
+          command: blkid -s UUID -o value /dev/mapper/system-root
+          register: root_uuid
+          changed_when: false
+        - name: Get UUID for var filesystem
+          command: blkid -s UUID -o value /dev/mapper/system-var
+          register: var_uuid
+          changed_when: false
+        - name: Get UUID for swap filesystem
+          command: blkid -s UUID -o value /dev/mapper/system-swap
+          register: swap_uuid
+          changed_when: false
+      tags:
+        - mk_fs
+    - name: Mount filesystems
+      block:
+        - name: Mount root filesystem
+          mount:
+            path: /mnt
+            src: UUID={{ root_uuid.stdout }}
+            fstype: ext4
+            state: mounted
+        - name: Create mountpoint for boot volume
+          file:
+            path: /mnt/boot
+            state: directory
+        - name: Mount boot filesystem
+          mount:
+            path: /mnt/boot
+            src: UUID={{ boot_uuid.stdout }}
+            fstype: vfat
+            state: mounted
+        - name: Create mountpoint for var volume
+          file:
+            path: /mnt/var
+            state: directory
+        - name: Mount var filesystem
+          mount:
+            path: /mnt/var
+            src: UUID={{ var_uuid.stdout }}
+            fstype: ext4
+            state: mounted
+      tags:
+        - mnt_fs
+    - name: Rank Arch mirrors
+      block:
+        - name: Install the pacman-contrib package (for rankmirrors)
+          pacman:
+            name:
+              - pacman-contrib
+            update_cache: yes
+        - name: Use rankmirrors to filter the fastest mirrors that support HTTPS
+          shell: curl -s "https://www.archlinux.org/mirrorlist/?country=RU&protocol=https&use_mirror_status=on" | sed -e 's/^#Server/Server/' -e '/^#/d' | rankmirrors -n 2 - > /etc/pacman.d/mirrorlist
+      tags:
+        - mirrors
+    - name: Run pacstrap
+      command: pacstrap /mnt {{ pacstrap_pkg }}
+      tags:
+        - pacstrap
+    - name: Generate fstab
+      block:
+        - name: Generate blank fstab
+          command: genfstab -U /mnt >> /mnt/etc/fstab
+        - name: Add root volume to fstab
+          mount:
+            fstab: /mnt/etc/fstab
+            path: /
+            src: /dev/mapper/system-root
+            fstype: ext4
+            opts: defaults
+            passno: '1'
+            state: present
+        - name: Add boot volume to fstab
+          mount:
+            fstab: /mnt/etc/fstab
+            path: /boot
+            src: UUID={{ boot_uuid.stdout }}
+            fstype: vfat
+            opts: defaults
+            passno: '2'
+            state: present
+        - name: Add var volume to fstab
+          mount:
+            fstab: /mnt/etc/fstab
+            path: /var
+            src: /dev/mapper/system-var
+            fstype: ext4
+            opts: defaults
+            state: present
+        - name: Add swap volume to fstab
+          mount:
+            fstab: /mnt/etc/fstab
+            path: "swap"
+            src: /dev/mapper/system-swap
+            fstype: swap
+            opts: defaults
+            state: present
+      tags:
+        - fstab
+    - name: Set local timezone
+      command: arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime
+      tags:
+        - timezone
+    - name: Generate adjtime file
+      command: arch-chroot /mnt hwclock --systohc
+      tags:
+        - adjtime
+    - name: Setup locales
+      block:
+        - name: Create vconsole.conf file for normalization output
+          copy:
+            content: |
+              LOCALE="ru_RU.UTF-8"
+              KEYMAP="ru"
+              FONT="cyr-sun16"
+              USECOLOR="yes"
+            dest: /mnt/etc/vconsole.conf
+        - name: Configure locale.gen
+          lineinfile:
+            dest: /mnt/etc/locale.gen
+            regexp: '{{ item.regex }}'
+            line: '{{ item.line }}'
+          loop:
+            - {regex: en_US\.UTF-8 UTF-8, line: en_US.UTF-8 UTF-8}
+            - {regex: en_US ISO-8859-1, line: en_US ISO-8859-1}
+            - {regex: ru_RU\.UTF-8 UTF-8, line: ru_RU.UTF-8 UTF-8}
+            - {regex: ru_RU ISO-8859-5, line: ru_RU ISO-8859-5}
+        - name: Create locale.conf
+          copy:
+            content: "LANG=ru_RU.UTF-8"
+            dest: /mnt/etc/locale.conf
+        - name: Generate locales
+          command: arch-chroot /mnt locale-gen
+      tags:
+        - locales
+    - name: Set hostname
+      copy:
+        content: '{{ inventory_hostname }}'
+        dest: /mnt/etc/hostname
+      tags:
+        - hostname
+    - name: Setup wifi and dhcp
+      block:
+        - name: Create netctl profile for wired connection
+          copy:
+            content: |
+              ctrl_interface=/run/wpa_supplicant
+              update_config=1
+              fast_reauth=1
+              ap_scan=1
+              network={
+                      ssid="WifiPointName"
+                      #psk="clearpasswordhere"
+                      psk=pskCryptedKeyHere
+              }
+            dest: '/mnt/etc/wpa_supplicant/wpa_supplicant-{{ wired_interface }}.conf'
+        - name: Enable wired wpa_supplicant service
+          command: "arch-chroot /mnt systemctl enable wpa_supplicant@{{ wired_interface }}.service"
+        - name: Enable dhcpcd client for wireless interface
+          command: "arch-chroot /mnt systemctl enable dhcpcd@{{ wired_interface }}"
+        - name: Enable rfkill-unblock service
+          command: "arch-chroot /mnt systemctl enable rfkill-unblock@all.service"
+      tags:
+        - wifi
+    - name: Enable sshd
+      command: arch-chroot /mnt systemctl enable sshd
+      tags:
+        - sshd
+    - name: Set up initramfs
+      block:
+        - name: Add mkinitcpio.conf hooks
+          lineinfile:
+            dest: /mnt/etc/mkinitcpio.conf
+            regexp: ^HOOKS=
+            #line: HOOKS=(base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems fsck)
+            line: HOOKS="base consolefont keymap udev autodetect modconf block keyboard encrypt lvm2 filesystems fsck"
+        - name: Create new initramfs
+          command: arch-chroot /mnt mkinitcpio -p linux
+      tags:
+        - initramfs
+        - mkinitcpio
+    - name: Set up boot
+      block:
+        - name: Install systemd boot
+          command: arch-chroot /mnt bootctl --path=/boot install
+        - name: Create entries dir
+          file:
+            path: /mnt/boot/loader/entries
+            state: directory
+        - name: Create loader.conf file
+          copy:
+            content: |
+              default arch
+              timeout 3
+              editor 0
+            dest: /mnt/boot/loader/loader.conf
+        - name: Create entries.conf file
+          copy:
+            content: |
+              title ArchLinux
+              linux /vmlinuz-linux
+              initrd /intel-ucode.img
+              initrd /initramfs-linux.img
+              options cryptdevice=UUID={{ system_uuid.stdout }}:system root=/dev/mapper/system-root quiet rw rcutree.rcu_idle_gp_delay=1 acpi="Linux" nvidia-drm.modeset=1 acpi_backlight=vendor
+            dest: /mnt/boot/loader/entries/arch.conf
+      tags:
+        - boot
+    - name: Setup user account
+      block:
+        - name: Create user account
+          command: arch-chroot /mnt useradd --create-home --user-group --groups wheel {{ user.name }} --password {{ user.password }}
+        - name: Create user's ssh directory
+          file:
+            path: /mnt/home/{{ user.name }}/.ssh
+            state: directory
+        - name: Set mode, owner, and group on user's ssh directory
+          command: arch-chroot /mnt {{ item }}
+          loop:
+            - chmod 0700 /home/{{ user.name }}/.ssh
+            - chown {{ user.name }}:{{ user.name }} /home/{{ user.name }}/.ssh
+          #        - name: Copy over ssh key from current Ansible controller as an authorized key
+          #          copy:
+          #            src: '{{ lookup("env", "HOME") }}/.ssh/id_ed25519.pub'
+          #            dest: /mnt/home/{{ user_name }}/.ssh/authorized_keys
+          #        - name: Set mode, owner, and group on user's authorized_key file
+          #          command: arch-chroot /mnt {{ item }}
+          #          loop:
+          #            - chmod 0600 /home/{{ user_name }}/.ssh/authorized_keys
+          #            - chown {{ user_name }}:{{ user_name }} /home/{{ user_name }}/.ssh/authorized_keys
+      tags:
+        - users
+    - name: Enable sudo access for wheel group
+      replace:
+        path: /mnt/etc/sudoers
+        regexp: '^#\s*%wheel\s+ALL=\(ALL\)\s+ALL'
+        replace: '%wheel ALL=(ALL) ALL'
+      tags:
+        - sudo
+    - name: Reboot
+      reboot:
+        connect_timeout: 1
+        reboot_timeout: 1
+      failed_when: false
+      tags:
+        - reboot

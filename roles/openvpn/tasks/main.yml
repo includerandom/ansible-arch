@@ -1,0 +1,12 @@
+---
+- name: Install openvpn pkg from Arch repositories
+  pacman:
+    name:
+      - openvpn
+
+- name: Copy configs for resolvconf
+  copy:
+    src: 'update-resolv-conf.sh'
+    dest: '/etc/openvpn/update-resolv-conf.sh'
+    mode: '0551'
+

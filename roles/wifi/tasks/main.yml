@@ -1,24 +1,9 @@
+---
 - name: Install wpa_supplicant
   pacman:
     name: wpa_supplicant
     state: present
 
-- name: Install Broadcom driver
-  pacman:
-    name: broadcom-wl
-    state: present
-  when: wifi.broadcom is sameas True
-  # Removed automatic loading: unreliable and changes network mid-run
-  #notify:
-    #- Unload built-in Broadcom modules
-    #- Load wl module
-
-#- meta: flush_handlers
-
-- name: Create systemd interface file
-  template:
-    src: interface.network.j2
-    dest: '/etc/systemd/network/{{ wifi.interface }}.network'
 
 # Create your own wpa_supplicant configuration file by renaming
 # files/wpa_supplicant-template.conf to match the your network interface. If

@@ -1,0 +1,57 @@
+# packages
+packages_pc:
+  packages:
+    - gimp
+    - telegram-desktop
+    - xdg-utils
+    # For IPMI KVM
+    #    - icedtea-web
+    - mpv
+    - youtube-dl
+    - remmina
+    - libvncserver
+    - xclip
+    - vim
+    - xorg-font-utils
+    - noto-fonts
+    - noto-fonts-extra
+    - ttf-droid
+    - ttf-liberation
+    - freetype2
+    - mesa-demos
+    - pcmanfm-gtk3
+    - transmission-gtk
+    - engrampa
+    - arc-icon-theme
+    - discord
+    - flameshot
+    - gvfs-mtp 
+    - gvfs-smb 
+    - gvfs
+    - xscreensaver
+    - gpicview-gtk3
+    - ansible
+    - openresolv
+    - lib32-freetype2
+    - keepassxc
+    - noto-fonts-cjk
+    - noto-fonts-emoji
+    - moreutils
+    - steam
+    - steam-native-runtime
+    - lib32-nvidia-utils
+    - transmission-gtk
+    - dmidecode
+  aur:
+    - smartgit
+    - steam-fonts 
+    - ttf-dejavu-sans-code
+    - ttf-ms-fonts 
+    - ttf-monaco
+    - steam-fonts
+    - woeusb-git
+
+# Combine lists, packages_all refers to packages for 'all' group
+install_packages:
+  packages: '{{ packages_pc.packages }} + {{ packages_all.packages }}'
+

@@ -1,0 +1,48 @@
+ansible_user: factor
+# uncoment for fresh_install playbook
+#ansible_user: root
+ansible_ssh_common_args: -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null"
+# uncoment for fresh_install playbook
+#ansible_ssh_pass: archiso
+boot_partition_suffix: 'p1'
+root_partition_suffix: 'p2'
+
+
+libreoffice:
+  hyphen_lang: en
+
+user:
+  name: factor
+  generate_ssh_key: True
+  ssh_key_bits: 4096
+  ssh_key_type: rsa
+  shell: zsh
+  #  password: sha512hash_here
+
+#dictionaries:
+#  hunspell_lang: en_US
+#  mythes_lang: en
+
+locale:
+  locale: ru_RU.UTF-8
+  console_keymap: ru
+
+#neovim:
+#  vim_spell: en
+#
+
+packages_all: 
+  packages:
+    - nmon
+  aur:
+    - pikaur
+
+time:
+  hwclock: local
+  timezone: Europe/Moscow
+pacman:
+  repos:
+    - multilib
+
+# vim: set filetype=yaml:
+

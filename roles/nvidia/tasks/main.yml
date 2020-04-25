@@ -1,3 +1,4 @@
+---
 - name: Install Nvidia drivers
   pacman:
     name: nvidia
@@ -7,4 +8,14 @@
   copy:
     src: 20-nvidia.conf
     dest: /etc/X11/xorg.conf.d/
+  when: nvidia.config is sameas True
+
+- name: Insert Nvidia params in .xinitrc
+  blockinfile:
+    insertbefore: BOF
+    path: '/home/{{ user.name }}/.xinitrc'
+    block: |
+      xrandr --setprovideroutputsource modesetting NVIDIA-0
+      xrandr --auto
+      xrandr --dpi 96
   when: nvidia.config is sameas True

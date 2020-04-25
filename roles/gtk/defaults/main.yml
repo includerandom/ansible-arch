@@ -1,0 +1,8 @@
+---
+gtk_config_files:
+  - gtk-2.0  
+  - gtk-3.0
+ 
+gtk_packages:
+  - arc-gtk-theme
+  - arc-icon-theme

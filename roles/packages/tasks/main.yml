@@ -1,12 +1,16 @@
 - name: Install packages from Arch repositories
   pacman:
-    name: '{{ packages.repos }}'
+    name: '{{ install_packages.packages }}'
     state: present
-  when: packages.repos is defined
+  when: install_packages.packages is defined
+
+- name: debug aur
+  debug:
+    msg: print '{{ packages_pc.aur }}'
 
 - name: Add AUR keys
   become: True
-  become_user: '{{ user.name }}'
+  #  become_user: '{{ user.name }}'
   command: 'gpg --recv-keys {{ item }}'
   with_items: '{{ packages.aur_keys }}'
   when: packages.aur_keys is defined
@@ -15,5 +19,6 @@
   aur:
     name: '{{ item }}'
     user: '{{ user.name }}'
-  with_items: '{{ packages.aur }}'
-  when: packages.aur is defined
+  with_items: '{{ packages_pc.aur }}'
+  when: packages_pc.aur is defined
+

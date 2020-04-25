@@ -1,0 +1,22 @@
+---
+- name: Install theme from Arch repositories
+  pacman:
+    name: '{{ item }}'
+    state: present
+  with_items: '{{ gtk_packages }}'
+  when: gtk_packages is defined
+
+- name: Check or create config dir in home of user
+  file:
+    state: directory
+    path: '/home/{{ user.name }}/.config'
+    owner: '{{ user.name }}'
+    group: '{{ user.name }}'
+
+- name: Copy gtk configs
+  copy:
+    src: '{{ item }}'
+    dest: '/home/{{ user.name }}/.config'
+  with_items: '{{ gtk_config_files }}'
+
+

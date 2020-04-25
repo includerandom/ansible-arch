@@ -1,43 +1,45 @@
 - name: Import base playbook
   import_playbook: base.yml
 
-- hosts: '{{ host }}'
+- hosts: all
   become: True
-  become_user: root
-  become_method: su
+  #  become_user: root
+  #  become_method: su
   roles:
     # Fonts (potential pre-requisite for multiple roles)
     - { role: fonts, tags: fonts }
 
     # System essential
-    - { role: wifi, tags: wifi }
     - { role: bluetooth, tags: bluetooth }
     - { role: pulseaudio, tags: pulseaudio }
-    - { role: cups, tags: cups }
 
-    # i3 requires xorg
+    # Conditional roles
+    - { role: nvidia, tags: nvidia, when: nvidia.install is sameas True }
+      #    - { role: tlp, tags: tlp, when: ansible_form_factor is match('Notebook') }
+
+    # i3 or awesome requires xorg
     - { role: xorg, tags: xorg }
-    - { role: i3, tags: i3 }
+    #- { role: i3, tags: i3 }
+    - { role: awesome, tags: awesome }
+    - { role: gtk, tags: gtk }
     - { role: autologin, tags: autologin }
+    - { role: backlight, tags: backlight }
 
-    # kitty (terminal emulator)
-    - { role: kitty, tags: kitty }
+    #sakura or kitty (terminal emulator)
+    #- { role: kitty, tags: kitty }
+    - { role: sakura, tags: sakura }
 
     # Packages
     - { role: packages, tags: packages }
 
     # Browsers
-    - { role: qutebrowser, tags: qutebrowser,
-        when: qutebrowser.install is sameas True }
     - { role: firefox, tags: firefox, when: firefox.install is sameas True }
     - { role: chromium, tags: chromium, when: chromium.install is sameas True }
 
     # Other non-essential package roles
     - { role: libreoffice, tags: libreoffice }
 
-    # Conditional roles
-    - { role: nvidia, tags: nvidia, when: nvidia.install is sameas True }
-    - { role: tlp, tags: tlp, when: ansible_form_factor is match('Notebook') }
-    - { role: macbook, tags: macbook,
-        when: ansible_product_name is search('MacBook') }
+    # OpenVPN
+    - { role: openvpn, tags: openvpn }
+
 

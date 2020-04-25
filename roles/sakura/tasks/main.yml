@@ -1,0 +1,26 @@
+---
+- name: Install awesome from Arch repositories
+  pacman:
+    name:
+      - sakura
+
+- name: Check or create config dir in home of user
+  file:
+    state: directory
+    path: '/home/{{ user.name }}/.config'
+    owner: '{{ user.name }}'
+    group: '{{ user.name }}'
+
+- name: Check or create awesome config dir in home of user
+  file:
+    state: directory
+    path: '/home/{{ user.name }}/.config/sakura'
+    owner: '{{ user.name }}'
+    group: '{{ user.name }}'
+
+- name: Copy configs for awesome
+  copy:
+    src: '{{ item }}'
+    dest: '/home/{{ user.name }}/.config/awesome'
+  with_items: '{{ sakura_config_files }}'
+

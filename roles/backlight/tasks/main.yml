@@ -1,0 +1,15 @@
+---
+- name: Install awesome from Arch repositories
+  pacman:
+    name:
+      - light
+
+- name: Add the user in group of video
+  user:
+    name: '{{ user.name }}'
+    group: video
+
+- name: Copy udev rules
+  copy:
+    src: 99-backlight.rules
+    dest: /etc/udev/rules.d/99-backlight.rules 

@@ -6,6 +6,7 @@
       # polybar
       - jsoncpp
       - wireless_tools
+      - i3status
 
 - name: Install i3-gaps, polybar and hsetroot from AUR
   aur:
