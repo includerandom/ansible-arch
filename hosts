@@ -1,6 +1,0 @@
-jvaughnserver ansible_connection=local
-
-[pc]
-jvaughndesktop ansible_connection=local
-jvaughnlaptop ansible_connection=local
-

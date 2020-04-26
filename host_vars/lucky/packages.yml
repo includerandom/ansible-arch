@@ -50,6 +50,7 @@ packages_pc:
     - ttf-monaco
     - steam-fonts
     - woeusb-git
+    - simplenote-electron-bin
 
 # Combine lists, packages_all refers to packages for 'all' group
 install_packages:
